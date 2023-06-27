@@ -12,7 +12,6 @@ import logging
 
 intents = discord.Intents.all()
 client = discord.Client(command_prefix='!', intents=intents)
-fieldnames = ['username', 'friends', 'posted', 'score', 'link', 'userscore']
 
 logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
 logging.info('Started bot on ' + str(datetime.datetime.now()))
@@ -30,7 +29,7 @@ cursor = cnx.cursor()
 
 
 async def post_daily_challenge():
-    post_time = datetime.time(hour=9, minute=17, second=00)
+    post_time = datetime.time(hour=5, minute=00, second=00)
     # Calculate the delay until the post time
     now = datetime.datetime.now(pytz.utc)
     post_datetime = datetime.datetime.combine(now.date(), post_time, tzinfo=pytz.utc)
@@ -52,7 +51,7 @@ async def post_daily_challenge():
                 f.write(str(challange_line + 1)+"\n")
                 f.writelines(lines[1:])
             
-            # Find the channel
+            # Find the posting channel
             channel = client.get_channel(1079817077600292894)
 
             # Post the challenge
@@ -65,7 +64,7 @@ async def post_daily_challenge():
             embed.add_field(name="Author:", value=challange[2], inline=True)
             await channel.send(embed=embed)
 
-            post_time = datetime.time(hour=7, minute=30, second=00)
+            post_time = datetime.time(hour=5, minute=00, second=00)
             # Calculate the delay until the post time
             now = datetime.datetime.now(pytz.utc)
             post_datetime = datetime.datetime.combine(now.date(), post_time, tzinfo=pytz.utc)
@@ -154,9 +153,9 @@ async def post_image(message, image_url, msgdescription = ""):
             
             # Post the image to the channel
             if msgdescription == "":
-                await channel.send("Post od **"+str(message.author)+"** "+image_url+" @everyone", allowed_mentions=allowed_mentions)
+                await channel.send("Post from **"+str(message.author)+"** "+image_url+" @everyone", allowed_mentions=allowed_mentions)
             else:
-                await channel.send("Post od **"+str(message.author)+"**: "+msgdescription+" "+image_url+" @everyone", allowed_mentions=allowed_mentions)
+                await channel.send("Post from **"+str(message.author)+"**: "+msgdescription+" "+image_url+" @everyone", allowed_mentions=allowed_mentions)
         except:
             logging.error(f'Error while posting image of {str(message.author)} to his/hers friends feed')
     
@@ -231,7 +230,7 @@ async def post(message):
     view.add_item(tlP)
     view.add_item(tlD)
 
-    ensurance = await message.reply("Chceš opravdu tento obrátek nahrát?", view=view)
+    ensurance = await message.reply("Are you sure you want to upload this picture?", view=view)
 
 
 async def send_friends_list(message):
