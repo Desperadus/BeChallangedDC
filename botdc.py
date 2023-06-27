@@ -315,11 +315,12 @@ async def on_message(message):
         await post(message)
     
     if message.content.startswith("!removepost") and message.author.id == 329288901049188352:
-        if len(str(message.content).split()) < 2:
-            databaseoperations.remove_todays_post(userid=329288901049188352, cursor=cursor, cnx=cnx)
-            return
-        else:
-            databaseoperations.remove_todays_post(userid=str(message.content).split()[1], cursor=cursor, cnx=cnx)
+        with cnx.cursor() as cursor:
+            if len(str(message.content).split()) < 2:
+                databaseoperations.remove_todays_post(userid=329288901049188352, cursor=cursor, cnx=cnx)
+                return
+            else:
+                databaseoperations.remove_todays_post(userid=str(message.content).split()[1], cursor=cursor, cnx=cnx)
     
     if message.content.startswith("!removeuser") and message.author.id == 329288901049188352:
         databaseoperations.remove_user_from_database(userid=str(message.content).split()[1], cursor=cursor, cnx=cnx)
