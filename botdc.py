@@ -22,14 +22,15 @@ cnx = mysql.connector.connect(
     port='3306',
     user='root',
     password=secret.database_passwd,
-    database='mydatabase'
+    database='mydatabase',
+    connection_timeout=999999999
 )
 
 # Create a cursor object
 
 
 async def post_daily_challenge():
-    post_time = datetime.time(hour=9, minute=17, second=00)
+    post_time = datetime.time(hour=5, minute=00, second=00)
     # Calculate the delay until the post time
     now = datetime.datetime.now(pytz.utc)
     post_datetime = datetime.datetime.combine(now.date(), post_time, tzinfo=pytz.utc)
@@ -64,7 +65,7 @@ async def post_daily_challenge():
             embed.add_field(name="Author:", value=challange[2], inline=True)
             await channel.send(embed=embed)
 
-            post_time = datetime.time(hour=7, minute=30, second=00)
+            post_time = datetime.time(hour=5, minute=00, second=00)
             # Calculate the delay until the post time
             now = datetime.datetime.now(pytz.utc)
             post_datetime = datetime.datetime.combine(now.date(), post_time, tzinfo=pytz.utc)
@@ -101,7 +102,7 @@ async def befriend(message):
                 return
         
         #Query
-        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = {user.id}")
+        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = ?", (user.id,))
         result = cursor.fetchone()
         if result is not None:
             channel1 = client.get_channel(int(result[0]))
@@ -109,7 +110,7 @@ async def befriend(message):
             logging.error(f'No friends channel of user {user.display_name} {user.id}')
             return
 
-        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = {message.author.id}")
+        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = ?", (message.author.id,))
         result = cursor.fetchone()
         if result is not None:
             channel2 = client.get_channel(int(result[0]))
@@ -146,7 +147,7 @@ async def post_image(message, image_url, msgdescription = ""):
     # Post the image to the user's friends feed
     # Get the user's friends
     async with cnx.cursor() as cursor:
-        cursor.execute(f"SELECT feed_channel_id FROM users INNER JOIN isfriends ON users.id = isfriends.user2 WHERE isfriends.user1 = {message.author.id}")
+        cursor.execute(f"SELECT feed_channel_id FROM users INNER JOIN isfriends ON users.id = isfriends.user2 WHERE isfriends.user1 = ?", (message.author.id,))
 
         # Post the image to the friends feed
         allowed_mentions = discord.AllowedMentions(everyone = True)
