@@ -102,7 +102,7 @@ async def befriend(message):
                 return
         
         #Query
-        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = ?", (user.id))
+        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = ?", (user.id,))
         result = cursor.fetchone()
         if result is not None:
             channel1 = client.get_channel(int(result[0]))
@@ -110,7 +110,7 @@ async def befriend(message):
             logging.error(f'No friends channel of user {user.display_name} {user.id}')
             return
 
-        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = ?", (message.author.id))
+        cursor.execute(f"SELECT friends_channel_id FROM users WHERE id = ?", (message.author.id,))
         result = cursor.fetchone()
         if result is not None:
             channel2 = client.get_channel(int(result[0]))
@@ -147,7 +147,7 @@ async def post_image(message, image_url, msgdescription = ""):
     # Post the image to the user's friends feed
     # Get the user's friends
     with cnx.cursor() as cursor:
-        cursor.execute(f"SELECT feed_channel_id FROM users INNER JOIN isfriends ON users.id = isfriends.user2 WHERE isfriends.user1 = ?", (message.author.id))
+        cursor.execute(f"SELECT feed_channel_id FROM users INNER JOIN isfriends ON users.id = isfriends.user2 WHERE isfriends.user1 = ?", (message.author.id,))
 
         # Post the image to the friends feed
         allowed_mentions = discord.AllowedMentions(everyone = True)
