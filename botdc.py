@@ -28,6 +28,27 @@ cnx = mysql.connector.connect(
 
 # Create a cursor object
 
+def restore_database_connection(func):
+    def wrapper(*args, **kwargs):
+        # Check if the connection is already established and connected
+        if not cnx.is_connected():
+            # Create a new connection if no connection exists or if the existing connection is not connected
+            cnx.connect(
+                host='172.17.0.1',
+                port='3306',
+                user='root',
+                password=secret.database_passwd,
+                database='mydatabase',
+                connection_timeout=999999999
+            )
+        
+        # Call the function with the database connection
+        result = func(*args, **kwargs)
+        
+        return result
+    
+    return wrapper
+
 
 async def post_daily_challenge():
     post_time = datetime.time(hour=5, minute=00, second=00)
@@ -78,11 +99,12 @@ async def post_daily_challenge():
             logging.error('Error while posting daily challenge')
             break
 
-
+@restore_database_connection
 def add_friend(authorid, userid):
     with cnx.cursor() as cursor:
         databaseoperations.add_friends_intodatabse(authorid, userid, cursor, cnx)
 
+@restore_database_connection
 async def befriend(message):
     with cnx.cursor() as cursor:
         try:
@@ -142,7 +164,7 @@ async def befriend(message):
 
         friend_request_message = await channel1.send(message_content, view=view)
 
-
+@restore_database_connection
 async def post_image(message, image_url, msgdescription = ""):
     # Post the image to the user's friends feed
     # Get the user's friends
@@ -164,7 +186,7 @@ async def post_image(message, image_url, msgdescription = ""):
         
         databaseoperations.add_post_intodatabse(message.author.id, message.id, image_url, cursor, cnx)
 
-
+@restore_database_connection
 async def post_image_global(message, image_url, msgdescription = ""):
     channel_name = "global-feed"
     channel = discord.utils.get(message.guild.text_channels, name=channel_name)
@@ -174,6 +196,7 @@ async def post_image_global(message, image_url, msgdescription = ""):
         await channel.send("Post from **"+str(message.author)+"**: "+msgdescription+" "+image_url)
 
 
+@restore_database_connection
 async def post(message):
     with cnx.cursor() as cursor:
         # Check if user has already posted today
@@ -237,6 +260,7 @@ async def post(message):
         ensurance = await message.reply("Chceš opravdu tento obrátek nahrát?", view=view)
 
 
+@restore_database_connection
 async def send_friends_list(message):
     with cnx.cursor() as cursor:
         userid = message.author.id
@@ -251,6 +275,7 @@ async def send_friends_list(message):
         
         await message.reply(embed=embed)
 
+@restore_database_connection
 async def unfriend_user(message):
     with cnx.cursor() as cursor:
         try:
@@ -269,12 +294,14 @@ async def unfriend_user(message):
 
 
 
+@restore_database_connection
 @client.event
 async def on_ready():
     logging.info('We have logged in as {0.user}'.format(client))
     await post_daily_challenge()
 
 
+@restore_database_connection
 @client.event
 async def on_member_join(member):
     with cnx.cursor() as cursor:
@@ -297,6 +324,7 @@ async def on_member_join(member):
         databaseoperations.add_user_intodatabse(member=member, channelposting=channelposting, channelfeed=channelfeed, channelfriends=channelfriends, cursor=cursor, cnx=cnx)
 
 
+@restore_database_connection
 @client.event
 async def on_message(message):
     if message.author == client.user:
