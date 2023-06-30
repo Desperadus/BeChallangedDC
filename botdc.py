@@ -17,42 +17,35 @@ fieldnames = ['username', 'friends', 'posted', 'score', 'link', 'userscore']
 logging.basicConfig(filename='logs.log', encoding='utf-8', level=logging.DEBUG)
 logging.info('Started bot on ' + str(datetime.datetime.now()))
 
-cnx = mysql.connector.connect(
-    host='172.17.0.1',
-    port='3306',
-    user='root',
-    password=secret.database_passwd,
-    database='mydatabase',
-    connection_timeout=999999999
-)
+challange_channel_id = 1079817077600292894
 
-# Create a cursor object
+connection_credentials = {
+    'host': '172.17.0.1',
+    'port': '3306',
+    'user': 'root',
+    'password': secret.database_passwd,
+    'database': 'mydatabase',
+    'connection_timeout': 999999999
+}
+
+
+cnx = mysql.connector.connect(**connection_credentials)
 
 def restore_database_connection(func):
     def wrapper(*args, **kwargs):
         # Check if the connection is already established and connected
         if not cnx.is_connected():
             # Create a new connection if no connection exists or if the existing connection is not connected
-            cnx.connect(
-                host='172.17.0.1',
-                port='3306',
-                user='root',
-                password=secret.database_passwd,
-                database='mydatabase',
-                connection_timeout=999999999
-            )
+            cnx.connect(**connection_credentials)
         
-        # Call the function with the database connection
         result = func(*args, **kwargs)
         
         return result
     
     return wrapper
 
-
-async def post_daily_challenge():
-    post_time = datetime.time(hour=5, minute=00, second=00)
-    # Calculate the delay until the post time
+#The time waiting here is ugly, but it works -_-
+async def wait_until_time(post_time):
     now = datetime.datetime.now(pytz.utc)
     post_datetime = datetime.datetime.combine(now.date(), post_time, tzinfo=pytz.utc)
     if now.time() >= post_time:
@@ -61,6 +54,11 @@ async def post_daily_challenge():
     logging.info('Delay until daily challenge: ' + str(delay))
     # Wait until the post time
     await asyncio.sleep(delay)
+
+async def post_daily_challenge():
+    post_time = datetime.time(hour=5, minute=00, second=00)
+    # Calculate the delay until the post time
+    await wait_until_time(post_time)
     while True:
         # Read the challenge from the file
         try:
@@ -74,7 +72,7 @@ async def post_daily_challenge():
                 f.writelines(lines[1:])
             
             # Find the channel
-            channel = client.get_channel(1079817077600292894)
+            channel = client.get_channel(challange_channel_id)
 
             # Post the challenge
             challange = challange.split("#")
@@ -88,13 +86,7 @@ async def post_daily_challenge():
 
             post_time = datetime.time(hour=5, minute=00, second=00)
             # Calculate the delay until the post time
-            now = datetime.datetime.now(pytz.utc)
-            post_datetime = datetime.datetime.combine(now.date(), post_time, tzinfo=pytz.utc)
-            if now.time() >= post_time:
-                post_datetime += datetime.timedelta(days=1)
-            delay = (post_datetime - now).total_seconds()
-            logging.info('Delay until daily challenge: ' + str(delay))
-            await asyncio.sleep(delay)
+            await wait_until_time(post_time)
         except:
             logging.error('Error while posting daily challenge')
             break
