@@ -11,7 +11,7 @@ def add_user_intodatabse(member, channelposting, channelfeed, channelfriends, cu
         pass
 
     try:
-        cursor.execute("INSERT INTO users (id, username, feed_channel_id, friends_channel_id, posting_channel_id) VALUES (?, ?, ?, ?, ?)", (member.id, member.display_name, channelfeed.id, channelfriends.id, channelposting.id))        
+        cursor.execute("INSERT INTO users (id, username, feed_channel_id, friends_channel_id, posting_channel_id) VALUES (%s, %s, %s, %s, %s)", (member.id, member.display_name, channelfeed.id, channelfriends.id, channelposting.id))        
         cnx.commit()
         logging.info(f"Added user to database {member.id} called {member.display_name}.")
     except:
@@ -20,8 +20,8 @@ def add_user_intodatabse(member, channelposting, channelfeed, channelfriends, cu
 def add_friends_intodatabse(user1id, user2id, cursor, cnx):
     logging.info(f"Befriending {user1id} and {user2id}.")
     try:
-        cursor.execute("INSERT INTO isfriends (user1, user2) VALUES (?, ?)", (user1id, user2id))
-        cursor.execute("INSERT INTO isfriends (user1, user2) VALUES (?, ?)", (user2id, user1id)) ##Ugly duplicate, but lazy to make it better
+        cursor.execute("INSERT INTO isfriends (user1, user2) VALUES (%s, %s)", (user1id, user2id))
+        cursor.execute("INSERT INTO isfriends (user1, user2) VALUES (%s, %s)", (user2id, user1id)) ##Ugly duplicate, but lazy to make it better
         cnx.commit()
         logging.info(f"Befriended {user1id} and {user2id}.")   
     except:
@@ -31,7 +31,7 @@ def add_friends_intodatabse(user1id, user2id, cursor, cnx):
 
 def test_friendship(user1id, user2id, cursor):
     try:
-        cursor.execute("SELECT COUNT(*) FROM isfriends WHERE (user1=? AND user2=?) OR (user1=? AND user2=?)", (user1id, user2id, user2id, user1id))        
+        cursor.execute("SELECT COUNT(*) FROM isfriends WHERE (user1=%s AND user2=%s) OR (user1=%s AND user2=%s)", (user1id, user2id, user2id, user1id))        
         result = cursor.fetchone()
         if int(result[0]) > 0:
             return True
@@ -45,17 +45,17 @@ def add_post_intodatabse(userid, postid, image_url, cursor, cnx):
     logging.info(f"Adding post {postid} by {userid}.")
     try:
         date = datetime.date.today().strftime('%Y-%m-%d')
-        cursor.execute("INSERT INTO posts (userid, postid, date, image_url) VALUES (?, ?, ?, ?)", (userid, postid, date, image_url))
+        cursor.execute("INSERT INTO posts (userid, postid, date, image_url) VALUES (%s, %s, %s, %s)", (userid, postid, date, image_url))
         cnx.commit()
         logging.info(f"Added post {postid} by {userid}.")
-    except:
-        logging.error(f"Could not add post {postid} by {userid}.")
+    except Exception as e:
+        logging.error(f"Could not add post {postid} by {userid}. {e}")
         return False
 
 def test_if_user_posted_today(userid, cursor):
     try:
         date = datetime.date.today().strftime('%Y-%m-%d')
-        cursor.execute("SELECT COUNT(*) FROM posts WHERE userid=? AND date=?", (userid, date))
+        cursor.execute("SELECT COUNT(*) FROM posts WHERE userid=%s AND date=%s", (userid, date))
         result = cursor.fetchone()
         if int(result[0]) > 0:
             return True
@@ -68,7 +68,7 @@ def test_if_user_posted_today(userid, cursor):
 def remove_todays_post(userid, cursor, cnx):
     try:
         date = datetime.date.today().strftime('%Y-%m-%d')
-        cursor.execute("DELETE FROM posts WHERE userid=? AND date=?", (userid, date))
+        cursor.execute("DELETE FROM posts WHERE userid=%s AND date=%s", (userid, date))
         cnx.commit()
         logging.info(f"Removed today's post for user {userid}.")
         return True
